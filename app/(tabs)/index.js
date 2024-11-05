@@ -1,3 +1,4 @@
+// (tabs)/index.js
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Button } from "react-native";
 import { useRouter } from "expo-router";
@@ -27,6 +28,11 @@ const HomeScreen = () => {
       <Button
         title="Go to Feature Screen"
         onPress={() => router.push("/features")}
+      />
+      {/* Add Login Button */}
+      <Button
+        title="Go to Login Screen"
+        onPress={() => router.push("/login")}
       />
     </View>
   );

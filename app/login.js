@@ -10,18 +10,21 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from "expo-router";
 import { auth } from "./firebaseConfig";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const router = useRouter(); // Initialize useRouter
 
   // Email/Password Login Handler
   const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       Alert.alert("Login successful", "You have logged in successfully.");
+      router.push("/dashboard"); // Navigate to Dashboard after successful login
     } catch (err) {
       setError(err.message);
       Alert.alert("Login failed", err.message);
@@ -71,6 +74,7 @@ const LoginScreen = () => {
   );
 };
 
+// Styling remains the same as in your provided code
 const styles = StyleSheet.create({
   container: {
     flex: 1,
