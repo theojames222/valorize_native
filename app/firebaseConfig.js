@@ -1,7 +1,8 @@
 // firebaseConfig.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAG73x53S9RfrxqgxdDo91F8peGoYIlIi0",
@@ -15,5 +16,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-export { auth, db };
+const storage = getStorage(app);
+async function getDownloadUrl(storagePath) {
+  try {
+    const storageRef = ref(storage, storagePath);
+    const url = await getDownloadURL(storageRef);
+    return url;
+  } catch (error) {
+    console.error("Error fetching download URL:", error);
+    return null;
+  }
+}
+export { auth, db, storage, getDownloadUrl };
