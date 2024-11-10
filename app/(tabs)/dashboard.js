@@ -13,6 +13,7 @@ import { signOut } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import PodcastCard from "../../components/PodcastCard";
 import FocusArea from "../../components/FocusAreaSection";
+import ChallengeDataContainer from "../../components/ChallengeDataContainer";
 
 const Dashboard = ({ navigation }) => {
   const [userId, setUserId] = useState(null);
@@ -21,6 +22,7 @@ const Dashboard = ({ navigation }) => {
   const [currentChallenges, setCurrentChallenges] = useState([]);
   const [completedChallenges, setCompletedChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userLevel, setUserLevel] = useState(1);
 
   // Fetch user data when component mounts
   useEffect(() => {
@@ -37,6 +39,7 @@ const Dashboard = ({ navigation }) => {
           setTopFocusAreas(data.top3 || []);
           setCurrentChallenges(data.currentChallenges || []);
           setCompletedChallenges(data.completedChallenges || []);
+          setUserLevel(data.level || 1);
         }
       }
       setLoading(false);
@@ -73,6 +76,11 @@ const Dashboard = ({ navigation }) => {
       {/* Other Dashboard sections can go here */}
 
       <FocusArea topFocusAreas={topFocusAreas} />
+      <ChallengeDataContainer
+        focusAreas={topFocusAreas}
+        userId={userId}
+        userLevel={userLevel}
+      />
     </ScrollView>
   );
 };
