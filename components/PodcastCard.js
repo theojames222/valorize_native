@@ -163,13 +163,12 @@ function PodcastCard({ userId }) {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: "#D3A43E",
     flex: 1,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFF",
+    color: "#F5EAD0",
     textAlign: "center",
     marginBottom: 16,
   },

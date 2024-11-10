@@ -2,6 +2,7 @@
 import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Button } from "react-native";
 import { useRouter } from "expo-router";
+import "../../global.css";
 
 const HomeScreen = () => {
   const router = useRouter();
@@ -27,11 +28,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#D3A43E",
+    backgroundColor: "#821426",
   },
   title: {
     fontSize: 24,
-    color: "#821426",
+    color: "#F5EAD0",
     marginBottom: 20,
   },
 });

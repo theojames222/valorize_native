@@ -90,16 +90,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#D3A43E",
+    backgroundColor: "#1F1F1F",
   },
   header: {
+    marginTop: 24,
     alignItems: "center",
     marginBottom: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFF",
+    color: "#F5EAD0",
     marginBottom: 10,
   },
   section: {
@@ -108,16 +109,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFF",
+    color: "#F5EAD0",
     marginBottom: 10,
   },
   focusArea: {
     fontSize: 16,
-    color: "#FFF",
+    color: "#F5EAD0",
   },
   noDataText: {
     fontSize: 16,
-    color: "#FFF",
+    color: "#F5EAD0",
   },
 });
 

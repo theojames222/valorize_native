@@ -1,9 +1,16 @@
-// PodcastPlayer2.js
 import React, { useState, useEffect } from "react";
-import { View, Text, Button, TextInput, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { Audio } from "expo-av";
-// import { FaLock } from "react-icons/fa6"; // This will be a placeholder as React Native doesn't support web icons directly
+import { FontAwesome } from "@expo/vector-icons"; // Import FontAwesome
+import { LinearGradient } from "expo-linear-gradient";
 
 function PodcastPlayer2({
   storagePath,
@@ -28,7 +35,6 @@ function PodcastPlayer2({
   const [toDoInput, setToDoInput] = useState(savedToDo || "");
   const [sound, setSound] = useState(null);
 
-  // Fetch audio URL from Firebase Storage
   useEffect(() => {
     const fetchAudioUrl = async () => {
       try {
@@ -44,7 +50,6 @@ function PodcastPlayer2({
     if (storagePath) fetchAudioUrl();
   }, [storagePath]);
 
-  // Load and unload audio when audio URL is ready
   useEffect(() => {
     const loadAudio = async () => {
       if (audioUrl) {
@@ -106,22 +111,43 @@ function PodcastPlayer2({
     return `${minutes}:${seconds}`;
   };
 
+  const progressPercentage = duration > 0 ? (progress / duration) * 100 : 0;
+
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={["#333333", "#821426", "#333333"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.container}
+    >
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.description}>{description}</Text>
 
       {audioUrl && (
         <View style={styles.audioContainer}>
-          <Button
-            title={isPlaying ? "Pause" : "Play"}
+          <TouchableOpacity
             onPress={handlePlayPause}
             disabled={isLocked}
-            color="#D3A43E"
-          />
+            style={[styles.playPauseButton, isLocked && styles.buttonLocked]}
+          >
+            <FontAwesome
+              name={isPlaying ? "pause" : "play"} // Use FontAwesome icons for play/pause
+              size={24}
+              color="#1F1B24"
+            />
+          </TouchableOpacity>
           <View style={styles.progressContainer}>
-            <Text style={styles.timeText}>{formatTime(progress)}</Text>
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+            <Text style={styles.timeText}>
+              {formatTime(progress)} / {formatTime(duration)}
+            </Text>
+            <View style={styles.progressBarBackground}>
+              <View
+                style={[
+                  styles.progressBar,
+                  { width: `${progressPercentage}%` },
+                ]}
+              />
+            </View>
           </View>
         </View>
       )}
@@ -139,81 +165,132 @@ function PodcastPlayer2({
               editable={!lockedSavedToDo}
             />
           ) : (
-            <Button
-              title={toDoInput ? "Unmark as Complete" : "Mark as Complete"}
+            <TouchableOpacity
               onPress={() => setToDoInput((prev) => !prev)}
               disabled={lockedSavedToDo}
-            />
+            >
+              <Text style={styles.checkboxLabel}>
+                {toDoInput ? "Unmark as Complete" : "Mark as Complete"}
+              </Text>
+            </TouchableOpacity>
           )}
           {!lockedSavedToDo && (
-            <Button
-              title="Save To-Do"
+            <TouchableOpacity
               onPress={handleSaveToDo}
-              color="#D3A43E"
-            />
+              style={styles.saveButton}
+            >
+              <Text style={styles.saveButtonText}>Save To-Do</Text>
+            </TouchableOpacity>
           )}
         </View>
       )}
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#D3A43E",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
+    backgroundColor: "#1F1B24",
+    padding: 20,
+    borderRadius: 10,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#FFF",
+    color: "#F5EAD0",
     marginBottom: 8,
+    textAlign: "center",
   },
   description: {
-    fontSize: 16,
-    color: "#FFF",
-    marginBottom: 16,
+    fontSize: 14,
+    color: "#F5EAD0",
+    marginBottom: 20,
+    textAlign: "center",
   },
   audioContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  playPauseButton: {
+    backgroundColor: "#D3A43E",
+    padding: 10,
+    borderRadius: 30,
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  buttonLocked: {
+    backgroundColor: "#AAA",
   },
   progressContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flex: 1,
+    alignItems: "center",
+  },
+  progressBarBackground: {
     width: "100%",
-    marginTop: 8,
+    height: 4,
+    backgroundColor: "#555",
+    borderRadius: 2,
+    overflow: "hidden",
+    marginVertical: 5,
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: "#4a90e2",
   },
   timeText: {
     fontSize: 12,
-    color: "#FFF",
+    color: "#BBB",
   },
   taskContainer: {
-    marginTop: 16,
+    marginTop: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    padding: 15,
+    borderRadius: 8,
   },
   taskTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#FFF",
+    color: "#D3A43E",
+    marginBottom: 5,
   },
   taskText: {
     fontSize: 14,
     color: "#FFF",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#FFF",
-    padding: 8,
-    borderRadius: 4,
+    borderColor: "#BBB",
+    padding: 10,
+    borderRadius: 5,
     color: "#FFF",
+    marginBottom: 10,
   },
   inputLocked: {
-    backgroundColor: "#ccc",
-    color: "#666",
+    backgroundColor: "#333",
+  },
+  saveButton: {
+    backgroundColor: "#D3A43E",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  saveButtonText: {
+    color: "#1F1B24",
+    fontWeight: "bold",
+  },
+  checkboxLabel: {
+    color: "#FFF",
+    fontSize: 14,
   },
 });
 
