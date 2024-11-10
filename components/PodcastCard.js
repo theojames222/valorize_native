@@ -55,8 +55,12 @@ function PodcastCard({ userId }) {
 
         const toDoResponses = data.toDoData || {};
         setToDoData(toDoResponses[currentSequence] || "");
+
+        // Check if a To-Do is already saved for the current sequence
         if (toDoResponses[currentSequence]) {
           setLockedSaveToDo(true);
+        } else {
+          setLockedSaveToDo(false);
         }
       }
     };

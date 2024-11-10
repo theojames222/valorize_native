@@ -156,16 +156,16 @@ function PodcastPlayer2({
         <View style={styles.taskContainer}>
           <Text style={styles.taskTitle}>Day {podcastSequence} Task</Text>
           <Text style={styles.taskText}>{toDoText}</Text>
-          {/* <Text style={styles.taskText}>{savedToDo}</Text> */}
+
           {savedToDo ? (
-            <Text style={styles.savedToDoText}>{savedToDo}</Text>
+            <Text style={styles.savedToDoText}>{savedToDo}</Text> // Display saved To-Do if it exists
           ) : toDoType === "general" ? (
             <TextInput
               value={toDoInput}
               onChangeText={(text) => setToDoInput(text)}
               placeholder="Enter your response here..."
               style={[styles.input, lockedSavedToDo && styles.inputLocked]}
-              editable={!lockedSavedToDo}
+              editable={!lockedSavedToDo} // Disable input if To-Do is locked
             />
           ) : (
             <TouchableOpacity
@@ -177,6 +177,7 @@ function PodcastPlayer2({
               </Text>
             </TouchableOpacity>
           )}
+
           {!lockedSavedToDo && !savedToDo && (
             <TouchableOpacity
               onPress={handleSaveToDo}
