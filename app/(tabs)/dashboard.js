@@ -12,6 +12,7 @@ import { auth, db } from "../../firebaseConfig";
 import { signOut } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import PodcastCard from "../../components/PodcastCard";
+import FocusArea from "../../components/FocusAreaSection";
 
 const Dashboard = ({ navigation }) => {
   const [userId, setUserId] = useState(null);
@@ -70,18 +71,8 @@ const Dashboard = ({ navigation }) => {
       <PodcastCard userId={userId} />
 
       {/* Other Dashboard sections can go here */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Focus Areas</Text>
-        {topFocusAreas.length > 0 ? (
-          topFocusAreas.map((area, index) => (
-            <Text key={index} style={styles.focusArea}>
-              {area}
-            </Text>
-          ))
-        ) : (
-          <Text style={styles.noDataText}>No focus areas found.</Text>
-        )}
-      </View>
+
+      <FocusArea topFocusAreas={topFocusAreas} />
     </ScrollView>
   );
 };

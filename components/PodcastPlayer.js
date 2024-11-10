@@ -131,7 +131,7 @@ function PodcastPlayer2({
             style={[styles.playPauseButton, isLocked && styles.buttonLocked]}
           >
             <FontAwesome
-              name={isPlaying ? "pause" : "play"} // Use FontAwesome icons for play/pause
+              name={isPlaying ? "pause" : "play"}
               size={24}
               color="#1F1B24"
             />
@@ -156,7 +156,10 @@ function PodcastPlayer2({
         <View style={styles.taskContainer}>
           <Text style={styles.taskTitle}>Day {podcastSequence} Task</Text>
           <Text style={styles.taskText}>{toDoText}</Text>
-          {toDoType === "general" ? (
+          {/* <Text style={styles.taskText}>{savedToDo}</Text> */}
+          {savedToDo ? (
+            <Text style={styles.savedToDoText}>{savedToDo}</Text>
+          ) : toDoType === "general" ? (
             <TextInput
               value={toDoInput}
               onChangeText={(text) => setToDoInput(text)}
@@ -174,7 +177,7 @@ function PodcastPlayer2({
               </Text>
             </TouchableOpacity>
           )}
-          {!lockedSavedToDo && (
+          {!lockedSavedToDo && !savedToDo && (
             <TouchableOpacity
               onPress={handleSaveToDo}
               style={styles.saveButton}
@@ -264,6 +267,11 @@ const styles = StyleSheet.create({
   taskText: {
     fontSize: 14,
     color: "#FFF",
+    marginBottom: 10,
+  },
+  savedToDoText: {
+    fontSize: 14,
+    color: "#BBB",
     marginBottom: 10,
   },
   input: {
