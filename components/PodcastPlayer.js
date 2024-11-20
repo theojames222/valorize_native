@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
   Alert,
 } from "react-native";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { Audio } from "expo-av";
-import { FontAwesome } from "@expo/vector-icons"; // Import FontAwesome
-import { LinearGradient } from "expo-linear-gradient";
+import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
 
-function PodcastPlayer2({
+function PodcastPlayer({
   storagePath,
   isLocked,
   onMarkAsComplete,
@@ -20,9 +20,6 @@ function PodcastPlayer2({
   podcastSequence,
   toDoText,
   toDoType,
-  challenge,
-  isCompleted,
-  completedToday,
   title,
   description,
   savedToDo,
@@ -33,10 +30,12 @@ function PodcastPlayer2({
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [toDoInput, setToDoInput] = useState(savedToDo || "");
-  const [sound, setSound] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const soundRef = useRef(null);
 
   useEffect(() => {
     const fetchAudioUrl = async () => {
+      setIsLoading(true);
       try {
         const storage = getStorage();
         const audioRef = ref(storage, storagePath);
@@ -44,263 +43,247 @@ function PodcastPlayer2({
         setAudioUrl(url);
       } catch (error) {
         console.error("Error fetching audio file:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     if (storagePath) fetchAudioUrl();
   }, [storagePath]);
 
-  useEffect(() => {
-    const loadAudio = async () => {
-      if (audioUrl) {
-        const { sound, status } = await Audio.Sound.createAsync(
-          { uri: audioUrl },
-          { shouldPlay: isPlaying }
-        );
-        setSound(sound);
-        setDuration(status.durationMillis || 0);
-        sound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
-      }
-    };
-
-    if (audioUrl) loadAudio();
-
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [audioUrl]);
-
-  const onPlaybackStatusUpdate = (status) => {
-    if (status.isLoaded) {
-      setProgress(status.positionMillis);
-      setIsPlaying(status.isPlaying);
-      if (status.didJustFinish) {
-        handleMarkAsComplete();
-        setIsPlaying(false);
-      }
-    }
-  };
-
   const handlePlayPause = async () => {
-    if (!isLocked && sound) {
+    if (!isLocked && soundRef.current) {
       if (isPlaying) {
-        await sound.pauseAsync();
+        await soundRef.current.pauseAsync();
       } else {
-        await sound.playAsync();
+        await soundRef.current.playAsync();
       }
       setIsPlaying(!isPlaying);
     }
   };
 
-  const handleMarkAsComplete = () => {
-    onMarkAsComplete(podcastSequence);
-    Alert.alert("Podcast Completed", "You have completed today's podcast!");
+  const handleRewind = async () => {
+    if (soundRef.current) {
+      const status = await soundRef.current.getStatusAsync();
+      const newPosition = Math.max(0, status.positionMillis - 10000);
+      await soundRef.current.setPositionAsync(newPosition);
+    }
   };
 
   const handleSaveToDo = () => {
     onSaveToDo(toDoInput);
-    Alert.alert("Success", "To-Do saved successfully");
+    Alert.alert("Success", "To-Do saved successfully.");
   };
 
-  const formatTime = (millis) => {
-    const totalSeconds = Math.floor(millis / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  useEffect(() => {
+    const loadAudio = async () => {
+      if (audioUrl) {
+        const { sound, status } = await Audio.Sound.createAsync(
+          { uri: audioUrl },
+          { shouldPlay: false }
+        );
+        soundRef.current = sound;
+        setDuration(status.durationMillis / 1000); // Convert milliseconds to seconds
+
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded) {
+            setProgress(status.positionMillis / 1000); // Convert milliseconds to seconds
+            if (status.didJustFinish) {
+              onMarkAsComplete(podcastSequence);
+              setIsPlaying(false);
+            }
+          }
+        });
+      }
+    };
+
+    loadAudio();
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, [audioUrl]);
+
+  const formatTime = (timeInSeconds) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60)
+      .toString()
+      .padStart(2, "0");
     return `${minutes}:${seconds}`;
   };
 
-  const progressPercentage = duration > 0 ? (progress / duration) * 100 : 0;
-
   return (
-    <LinearGradient
-      colors={["#333333", "#821426", "#333333"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={styles.container}
-    >
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
+    <View style={styles.container}>
+      {/* Podcast Section */}
+      <View style={styles.section}>
+        <Text style={styles.title}>The Morning Forge Podcast</Text>
+        <Text style={styles.subtitle}>{title}</Text>
+        <Text style={styles.description}>{description}</Text>
 
-      {audioUrl && (
-        <View style={styles.audioContainer}>
+        {isLoading && <ActivityIndicator size="small" color="#D3A43E" />}
+
+        <View style={styles.audioControls}>
+          <TouchableOpacity
+            onPress={handleRewind}
+            disabled={isLocked || !audioUrl}
+          >
+            <MaterialIcons
+              name="replay-10"
+              size={30}
+              color={isLocked ? "#888" : "#D3A43E"}
+            />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={handlePlayPause}
-            disabled={isLocked}
-            style={[styles.playPauseButton, isLocked && styles.buttonLocked]}
+            disabled={isLocked || !audioUrl}
           >
             <FontAwesome
               name={isPlaying ? "pause" : "play"}
-              size={24}
-              color="#1F1B24"
+              size={40}
+              color={isLocked ? "#888" : "#D3A43E"}
             />
           </TouchableOpacity>
-          <View style={styles.progressContainer}>
-            <Text style={styles.timeText}>
-              {formatTime(progress)} / {formatTime(duration)}
-            </Text>
-            <View style={styles.progressBarBackground}>
-              <View
-                style={[
-                  styles.progressBar,
-                  { width: `${progressPercentage}%` },
-                ]}
-              />
-            </View>
+        </View>
+
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${(progress / duration) * 100}%` },
+              ]}
+            />
+          </View>
+          <View style={styles.timeContainer}>
+            <Text style={styles.timeText}>{formatTime(progress)}</Text>
+            <Text style={styles.timeText}>{formatTime(duration)}</Text>
           </View>
         </View>
-      )}
+      </View>
 
-      {isCompleted && (
-        <View style={styles.taskContainer}>
-          <Text style={styles.taskTitle}>Day {podcastSequence} Task</Text>
-          <Text style={styles.taskText}>{toDoText}</Text>
+      {/* To-Do Section */}
+      <View style={styles.section}>
+        <Text style={styles.subtitle}>Daily To-Do</Text>
+        <Text style={styles.description}>{toDoText}</Text>
 
-          {savedToDo ? (
-            <Text style={styles.savedToDoText}>{savedToDo}</Text> // Display saved To-Do if it exists
-          ) : toDoType === "general" ? (
-            <TextInput
-              value={toDoInput}
-              onChangeText={(text) => setToDoInput(text)}
-              placeholder="Enter your response here..."
-              style={[styles.input, lockedSavedToDo && styles.inputLocked]}
-              editable={!lockedSavedToDo} // Disable input if To-Do is locked
-            />
-          ) : (
-            <TouchableOpacity
-              onPress={() => setToDoInput((prev) => !prev)}
-              disabled={lockedSavedToDo}
-            >
-              <Text style={styles.checkboxLabel}>
-                {toDoInput ? "Unmark as Complete" : "Mark as Complete"}
-              </Text>
-            </TouchableOpacity>
-          )}
+        {toDoType === "general" ? (
+          <TextInput
+            style={styles.input}
+            value={toDoInput}
+            onChangeText={setToDoInput}
+            placeholder="Enter your response..."
+            editable={!lockedSavedToDo}
+          />
+        ) : (
+          <TouchableOpacity
+            style={styles.checkbox}
+            disabled={lockedSavedToDo}
+            onPress={() => setToDoInput((prev) => !prev)}
+          >
+            <Text style={styles.checkboxLabel}>
+              {toDoInput ? "Unmark as Complete" : "Mark as Complete"}
+            </Text>
+          </TouchableOpacity>
+        )}
 
-          {!lockedSavedToDo && !savedToDo && (
-            <TouchableOpacity
-              onPress={handleSaveToDo}
-              style={styles.saveButton}
-            >
-              <Text style={styles.saveButtonText}>Save To-Do</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-    </LinearGradient>
+        <TouchableOpacity
+          style={[styles.saveButton, lockedSavedToDo && styles.disabledButton]}
+          disabled={lockedSavedToDo}
+          onPress={handleSaveToDo}
+        >
+          <Text style={styles.saveButtonText}>
+            {lockedSavedToDo ? "Saved" : "Save To-Do"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#1F1B24",
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
+    padding: 16,
+    flex: 1,
+  },
+  section: {
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    backgroundColor: "#1F1F1F",
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#F5EAD0",
+    color: "#D3A43E",
+  },
+  subtitle: {
+    fontSize: 16,
     marginBottom: 8,
-    textAlign: "center",
+    color: "#FFF",
   },
   description: {
     fontSize: 14,
-    color: "#F5EAD0",
-    marginBottom: 20,
-    textAlign: "center",
+    marginBottom: 16,
+    color: "#BBB",
   },
-  audioContainer: {
+  audioControls: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  playPauseButton: {
-    backgroundColor: "#D3A43E",
-    padding: 10,
-    borderRadius: 30,
-    width: 60,
-    alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
-  },
-  buttonLocked: {
-    backgroundColor: "#AAA",
+    alignItems: "center",
+    marginVertical: 16,
   },
   progressContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-  progressBarBackground: {
-    width: "100%",
-    height: 4,
-    backgroundColor: "#555",
-    borderRadius: 2,
-    overflow: "hidden",
-    marginVertical: 5,
+    marginTop: 8,
   },
   progressBar: {
+    height: 4,
+    backgroundColor: "#ccc",
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: {
     height: "100%",
-    backgroundColor: "#4a90e2",
+    backgroundColor: "#D3A43E",
+  },
+  timeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   timeText: {
     fontSize: 12,
-    color: "#BBB",
-  },
-  taskContainer: {
-    marginTop: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    padding: 15,
-    borderRadius: 8,
-  },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#D3A43E",
-    marginBottom: 5,
-  },
-  taskText: {
-    fontSize: 14,
-    color: "#FFF",
-    marginBottom: 10,
-  },
-  savedToDoText: {
-    fontSize: 14,
-    color: "#BBB",
-    marginBottom: 10,
+    color: "#888",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#BBB",
-    padding: 10,
-    borderRadius: 5,
+    borderColor: "#ccc",
+    borderRadius: 4,
+    padding: 8,
+    marginBottom: 16,
     color: "#FFF",
-    marginBottom: 10,
-  },
-  inputLocked: {
-    backgroundColor: "#333",
   },
   saveButton: {
     backgroundColor: "#D3A43E",
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 8,
+    borderRadius: 4,
     alignItems: "center",
-    marginTop: 10,
   },
   saveButtonText: {
-    color: "#1F1B24",
+    color: "#1F1F1F",
     fontWeight: "bold",
   },
+  disabledButton: {
+    backgroundColor: "#888",
+  },
+  checkbox: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   checkboxLabel: {
-    color: "#FFF",
+    marginLeft: 8,
     fontSize: 14,
+    color: "#FFF",
   },
 });
 
-export default PodcastPlayer2;
+export default PodcastPlayer;

@@ -6,14 +6,14 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
-import { auth, db } from "../../firebaseConfig"; // Update the path to your Firebase config
+import { auth, db } from "../firebaseConfig"; // Update the path to your Firebase config
 import { doc, getDoc, collection, getDocs, signOut } from "firebase/firestore";
 import { useNavigation } from "@react-navigation/native"; // React Navigation
-import TopSection from "../../components/dashboard/TopSection"; // Placeholder for your components
-import PodcastCard from "../../components/PodcastCard"; // Adjust imports for React Native
-import CurrentActivities from "../../components/dashboard/CurrentActivities";
-import ChallengeDataContainer from "../../components/ChallengeDataContainer";
-import KnowledgeCenter from "../../components/dashboard/KnowledgeCenter";
+import TopSection from "../components/TopSection"; // Placeholder for your components
+import PodcastCard from "../components/PodcastCard"; // Adjust imports for React Native
+import CurrentActivities from "../components/CurrentActivities";
+import ChallengeDataContainer from "../components/ChallengeDataContainer";
+import KnowledgeCenter from "../components/KnowledgeCenter";
 
 const ModernDashboard = () => {
   const navigation = useNavigation();

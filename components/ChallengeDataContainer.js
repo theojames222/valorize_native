@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { db } from "../firebaseConfig";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { collection, getDocs } from "firebase/firestore";
-import ChallengeSection from "./ChallengeSection";
+import { db } from "../firebaseConfig";
+import ChallengesSection from "./ChallengeSection";
 
 const ChallengeDataContainer = ({ focusAreas, userId, userLevel }) => {
-  const [allChallenges, setAllChallenges] = useState([]);
+  const [challenges, setChallenges] = useState([]);
   const [currentChallenges, setCurrentChallenges] = useState([]);
-  const [suggestedChallenges, setSuggestedChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAllChallenges, setShowAllChallenges] = useState(false);
 
@@ -21,7 +20,6 @@ const ChallengeDataContainer = ({ focusAreas, userId, userLevel }) => {
           ...doc.data(),
         }));
 
-        // Fetch user's current challenges
         const userCurrentChallengesCollection = collection(
           db,
           "users",
@@ -35,18 +33,8 @@ const ChallengeDataContainer = ({ focusAreas, userId, userLevel }) => {
           (doc) => doc.id
         );
 
-        setAllChallenges(challengeList); // Store all challenges
+        setChallenges(challengeList);
         setCurrentChallenges(userCurrentChallengeIds);
-
-        // Filter suggested challenges initially based on focus areas and current challenges
-        const filteredSuggested = challengeList.filter((challenge) => {
-          const matchesFocusArea = focusAreas.includes(challenge.pillar);
-          const notInCurrent = !userCurrentChallengeIds.includes(challenge.id);
-
-          return matchesFocusArea && notInCurrent;
-        });
-
-        setSuggestedChallenges(filteredSuggested);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching challenges:", error);
@@ -54,71 +42,91 @@ const ChallengeDataContainer = ({ focusAreas, userId, userLevel }) => {
     };
 
     fetchChallenges();
-  }, [userId, focusAreas]);
+  }, [userId]);
 
   const updateChallengeStatus = (updatedChallenge) => {
-    setAllChallenges((prevChallenges) =>
+    setChallenges((prevChallenges) =>
       prevChallenges.map((challenge) =>
         challenge.id === updatedChallenge.id
           ? { ...challenge, status: "current" }
           : challenge
       )
     );
-    setSuggestedChallenges((prevSuggested) =>
-      prevSuggested.filter((c) => c.id !== updatedChallenge.id)
-    );
   };
 
-  const handleRemoveChallenge = (id) => {
-    setAllChallenges((prev) =>
-      prev.map((challenge) =>
-        challenge.id === id ? { ...challenge, status: "suggested" } : challenge
-      )
-    );
-  };
-
-  const handleToggleChallengesView = () => {
+  const handleToggleChallengesView = () =>
     setShowAllChallenges(!showAllChallenges);
-  };
 
   if (loading) {
     return (
-      <View style={styles.loaderContainer}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#D3A43E" />
+        <Text style={styles.loadingText}>Loading Challenges...</Text>
       </View>
     );
   }
 
+  const currentChallengesList = challenges.filter((challenge) =>
+    currentChallenges.includes(challenge.id)
+  );
+  const suggestedChallengesList = challenges.filter(
+    (challenge) =>
+      !currentChallenges.includes(challenge.id) &&
+      focusAreas.includes(challenge.pillar)
+  );
+  const completedChallengesList = challenges.filter(
+    (challenge) => challenge.status === "completed"
+  );
+
   return (
-    <ChallengeSection
-      currentChallenges={allChallenges.filter(
-        (challenge) =>
-          currentChallenges.includes(challenge.id) &&
-          challenge.status === "current"
-      )}
-      suggestedChallenges={suggestedChallenges}
-      completedChallenges={allChallenges.filter(
-        (challenge) => challenge.status === "completed"
-      )}
-      allChallenges={allChallenges} // Pass all challenges to ChallengesSection
-      userLevel={userLevel}
-      handleAddChallenge={updateChallengeStatus}
-      handleRemoveChallenge={handleRemoveChallenge}
-      handleCompleteChallenge={(challenge) =>
-        console.log("Complete", challenge)
-      }
-      showAllChallenges={showAllChallenges}
-      handleToggleChallengesView={handleToggleChallengesView}
-      userId={userId}
-    />
+    <View style={styles.container}>
+      <Text style={styles.header}>Challenges</Text>
+      <ChallengesSection
+        title="Current Challenges"
+        challenges={currentChallengesList}
+        onChallengePress={updateChallengeStatus}
+      />
+      <ChallengesSection
+        title={showAllChallenges ? "All Challenges" : "Suggested Challenges"}
+        challenges={showAllChallenges ? challenges : suggestedChallengesList}
+        onChallengePress={updateChallengeStatus}
+        toggleViewLabel={
+          showAllChallenges
+            ? "Show Suggested Challenges"
+            : "Show All Challenges"
+        }
+        onToggleView={handleToggleChallengesView}
+      />
+      <ChallengesSection
+        title="Completed Challenges"
+        challenges={completedChallengesList}
+        onChallengePress={() => {}}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  loaderContainer: {
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#1F1F1F",
+  },
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 8,
+    color: "#D3A43E",
+    fontSize: 16,
+  },
+  header: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#D3A43E",
+    marginBottom: 16,
   },
 });
 
